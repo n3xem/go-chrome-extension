@@ -70,6 +70,28 @@ function collectTextElements(root: HTMLElement): TextElement[] {
     return textElements;
 }
 
+// バックグラウンドからの応答を受信
+chrome.runtime.onMessage.addListener((message) => {
+    if (message.type === 'MODIFIED_TEXT_ELEMENTS') {
+        console.log('Received modified elements from background:');
+        console.log(JSON.stringify(message.data, null, 2));
+
+        // 実際のDOM要素のテキストを更新
+        message.data.forEach((element: TextElement) => {
+            const domElement = document.querySelector(element.fullPath);
+            if (domElement) {
+                // 直接のテキストノードのみを更新
+                for (const node of Array.from(domElement.childNodes)) {
+                    if (node.nodeType === Node.TEXT_NODE && node.textContent?.trim()) {
+                        node.textContent = element.text;
+                        break;
+                    }
+                }
+            }
+        });
+    }
+});
+
 // 結果をJSONとしてバックグラウンドスクリプトに送信
 function sendTextElements(): void {
     const elements = collectTextElements(document.documentElement);

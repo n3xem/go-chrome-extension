@@ -2,14 +2,21 @@
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === 'TEXT_ELEMENTS') {
         console.log('Received text elements from content script:');
-        console.log(JSON.stringify(message.data, null, 2));
 
-        // オプション: 送信元のタブ情報も出力
-        if (sender.tab) {
-            console.log('From tab:', {
-                url: sender.tab.url,
-                title: sender.tab.title,
-                id: sender.tab.id
+        // 全てのテキストを"hoge"に変更
+        const modifiedElements = message.data.map((element: { text: string }) => ({
+            ...element,
+            text: 'hoge'
+        }));
+
+        console.log('Modified elements:');
+        console.log(JSON.stringify(modifiedElements, null, 2));
+
+        // content scriptに送り返す
+        if (sender.tab?.id) {
+            chrome.tabs.sendMessage(sender.tab.id, {
+                type: 'MODIFIED_TEXT_ELEMENTS',
+                data: modifiedElements
             });
         }
     }
