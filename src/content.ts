@@ -70,16 +70,19 @@ function collectTextElements(root: HTMLElement): TextElement[] {
     return textElements;
 }
 
-// 結果をJSONとしてコンソールに出力
-function logTextElements(): void {
+// 結果をJSONとしてバックグラウンドスクリプトに送信
+function sendTextElements(): void {
     const elements = collectTextElements(document.documentElement);
-    console.log(JSON.stringify(elements, null, 2));
+    chrome.runtime.sendMessage({
+        type: 'TEXT_ELEMENTS',
+        data: elements
+    });
 }
 
 // ページ読み込み完了時に実行
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM Content Loaded - Logging text elements:');
-    logTextElements();
+    console.log('DOM Content Loaded - Sending text elements');
+    sendTextElements();
 });
 
 // 動的な変更を監視
@@ -93,8 +96,8 @@ const observer = new MutationObserver((mutations: MutationRecord[]) => {
     });
 
     if (relevantMutation) {
-        console.log('Text Elements Changed - Logging text elements:');
-        logTextElements();
+        console.log('Text Elements Changed - Sending text elements');
+        sendTextElements();
     }
 });
 
