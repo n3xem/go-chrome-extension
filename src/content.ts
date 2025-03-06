@@ -70,7 +70,7 @@ function collectTextElements(root: HTMLElement): TextElement[] {
     return textElements;
 }
 
-// バックグラウンドからの応答を受信
+// バックグラウンドからの応答を受信して DOM を更新
 chrome.runtime.onMessage.addListener((message) => {
     if (message.type === 'MODIFIED_TEXT_ELEMENTS') {
         console.log('Received modified elements from background:');
@@ -78,15 +78,27 @@ chrome.runtime.onMessage.addListener((message) => {
 
         // 実際のDOM要素のテキストを更新
         message.data.forEach((element: TextElement) => {
-            const domElement = document.querySelector(element.fullPath);
-            if (domElement) {
-                // 直接のテキストノードのみを更新
-                for (const node of Array.from(domElement.childNodes)) {
-                    if (node.nodeType === Node.TEXT_NODE && node.textContent?.trim()) {
-                        node.textContent = element.text;
-                        break;
-                    }
+            try {
+                // セレクタを使って要素を見つける
+                const domElement = document.querySelector(element.fullPath);
+                if (domElement) {
+                    let updated = false;
+                    // 直接のテキストノードのみを更新
+                    Array.from(domElement.childNodes).forEach(node => {
+                        if (!updated && node.nodeType === Node.TEXT_NODE) {
+                            const originalText = node.textContent?.trim();
+                            if (originalText) {
+                                node.textContent = node.textContent?.replace(originalText, element.text) || null;
+                                updated = true;
+                                console.log(`Updated text in ${element.fullPath}: "${originalText}" -> "${element.text}"`);
+                            }
+                        }
+                    });
+                } else {
+                    console.warn(`Element not found: ${element.fullPath}`);
                 }
+            } catch (error) {
+                console.error(`Error updating element ${element.fullPath}:`, error);
             }
         });
     }
