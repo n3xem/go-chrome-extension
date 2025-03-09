@@ -2,7 +2,10 @@ package main
 
 import (
 	"encoding/json"
+	"strings"
 	"syscall/js"
+
+	"github.com/hackebrot/turtle"
 )
 
 func ProcessTextElements(_ js.Value, args []js.Value) any {
@@ -15,9 +18,26 @@ func ProcessTextElements(_ js.Value, args []js.Value) any {
 		return "Error: " + err.Error()
 	}
 
-	// 各要素のtextフィールドを"hoge"に変更
+	// 各要素のtextフィールドを処理
 	for i := range elements {
-		elements[i]["text"] = "hoge"
+		if text, ok := elements[i]["text"].(string); ok {
+			// テキストをスペースで分割
+			words := strings.Split(text, " ")
+			var resultWords []string
+
+			// 各単語に対して絵文字検索を実行
+			for _, word := range words {
+				emojis := turtle.Search(word)
+				if len(emojis) > 0 {
+					resultWords = append(resultWords, emojis[0].Char)
+				} else {
+					resultWords = append(resultWords, word)
+				}
+			}
+
+			// 処理した単語を再度結合
+			elements[i]["text"] = strings.Join(resultWords, " ")
+		}
 	}
 
 	// 変更したデータをJSON文字列に戻す
